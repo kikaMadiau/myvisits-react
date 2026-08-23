@@ -90,7 +90,7 @@ export default function AddVisitForm({ onClose, onCreated }) {
 
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-[100] bg-black/40 flex items-end sm:items-center justify-center">
       <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-3xl">
           <h2 className="text-lg font-bold text-gray-900">New Visit</h2>
@@ -99,7 +99,7 @@ export default function AddVisitForm({ onClose, onCreated }) {
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] space-y-4">
           <div>
             <Label className="text-xs text-gray-500 mb-1">Nom *</Label>
             <Input value={form.visitor_nom} onChange={(e) => update("visitor_nom", e.target.value)} placeholder="Nom du visiteur" />

@@ -5,6 +5,9 @@ import VisitCard from "@/components/visits/VisitCard";
 import { api } from "@/api/backendClient";
 import { queryKeys } from "@/lib/queries";
 import { getUserName } from "@/lib/userFields";
+import { getVisitDate, getVisitorId } from "@/lib/visitFields";
+import { isVisitUpcoming, parseVisitDate } from "@/lib/date";
+import { useAuth } from "@/lib/AuthContext";
 
 const getFirstValue = (source, fields) => {
   for (const field of fields) {
@@ -24,17 +27,45 @@ const getList = (source, fields) => {
 
 const getObject = (value) => (value && typeof value === "object" && !Array.isArray(value) ? value : {});
 
+const getVisitsList = (source) => {
+  if (Array.isArray(source)) return source.filter(Boolean);
+
+  const data = getObject(source);
+  return getList(data, ["data", "visits", "result", "items"]);
+};
+
+const isOpenVisit = (visit) => {
+  const status = String(visit?.status || visit?.vis_status || "").toLowerCase();
+  return !["completed", "complete", "cancelled", "canceled", "annulee", "annulée"].includes(status);
+};
+
+const sortByVisitDate = (a, b) => {
+  const dateA = parseVisitDate(getVisitDate(a));
+  const dateB = parseVisitDate(getVisitDate(b));
+
+  if (!dateA && !dateB) return 0;
+  if (!dateA) return 1;
+  if (!dateB) return -1;
+  return dateA.getTime() - dateB.getTime();
+};
+
 export default function Dashboard() {
+  const { user: authUser } = useAuth();
   const { data: dashboardResponse, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.dashboard,
     queryFn: () => api.dashboard.get(),
   });
 
+  const { data: visitsResponse } = useQuery({
+    queryKey: queryKeys.visits.all,
+    queryFn: () => api.visits.list(),
+  });
+
   const dashboard = getObject(dashboardResponse);
-  const dashboardData = getObject(dashboard.dashboard || dashboard.result || dashboard);
+  const dashboardData = getObject(dashboard.dashboard || dashboard.data || dashboard.result || dashboard);
   const dashboardStats = getObject(dashboardData.stats || dashboardData.statistics || dashboardData.counters || dashboardData);
   const weekStats = getObject(dashboardData.this_week || dashboardData.thisWeek || dashboardData.week || dashboardData.week_stats || dashboardData);
-  const upcoming = getList(dashboardData, [
+  const dashboardUpcoming = getList(dashboardData, [
     "upcoming_visits",
     "upcomingVisits",
     "upcoming",
@@ -43,9 +74,16 @@ export default function Dashboard() {
     "next_visits",
     "nextVisits",
   ]);
+  const visits = getVisitsList(visitsResponse);
+  const upcomingSource = dashboardUpcoming.length > 0 ? dashboardUpcoming : visits;
+  const upcoming = upcomingSource
+    .filter((visit) => isOpenVisit(visit) && (isVisitUpcoming(getVisitDate(visit)) || !parseVisitDate(getVisitDate(visit))))
+    .sort(sortByVisitDate)
+    .slice(0, 5);
 
   const userName = getUserName(
-    dashboardData.user ||
+    authUser ||
+      dashboardData.user ||
       dashboardData.current_user ||
       dashboardData.currentUser ||
       dashboardData.profile ||
@@ -127,14 +165,14 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="space-y-2.5">
-            {upcoming.map((v) => (
-              <VisitCard key={v.id} visit={v} />
+            {upcoming.map((v, index) => (
+              <VisitCard key={getVisitorId(v) || v.id || index} visit={v} />
             ))}
           </div>
         )}
       </div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats 
       <div className="px-5 mt-6 mb-4">
         <div className="bg-white rounded-2xl p-4 border border-gray-100">
           <div className="flex items-center gap-2 mb-3">
@@ -158,7 +196,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      </div>
+      </div>*/}
     </div>
   );
 }

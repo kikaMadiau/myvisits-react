@@ -37,6 +37,7 @@ export default function PwaStatus() {
       toast({
         title: "Mise à jour disponible",
         description: "Une nouvelle version de l'application est prête.",
+        duration: Infinity,
         action: (
           <ToastAction
             onClick={() => waitingWorkerRef.current?.postMessage({ type: "SKIP_WAITING" })}

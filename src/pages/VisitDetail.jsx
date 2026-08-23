@@ -235,7 +235,7 @@ export default function VisitDetail() {
           </div>
         )}
 
-        {/* Report */}
+        {/* Report 
         <div className="bg-white rounded-2xl p-4 border border-gray-100">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs text-gray-400">Visit Report</p>
@@ -270,7 +270,7 @@ export default function VisitDetail() {
               ))}
             </div>
           </div>
-        )}
+        )}*/}
 
         <div className="bg-white rounded-2xl p-4 border border-red-100">
           <div className="flex items-center gap-3 mb-3">
