@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Mail, Phone, Shield, LogOut } from "lucide-react";
+import { AlertCircle, CheckCircle2, LogOut, Mail, Phone, Shield, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -56,91 +56,113 @@ export default function Profile() {
     await logout();
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white pt-12 pb-6 px-5 border-b border-gray-100 text-center">
-        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-          <span className="text-2xl font-bold text-blue-600">
-            {displayInitial}
-          </span>
-        </div>
-        <h1 className="text-lg font-bold text-gray-900">{displayName}</h1>
-        <p className="text-sm text-gray-400">{displayEmail || "—"}</p>
-      </div>
+  const profileItems = [
+    { label: "Nom complet", value: displayName || "—", icon: User },
+    { label: "Email", value: displayEmail || "—", icon: Mail },
+    { label: "Rôle", value: displayRole || "user", icon: Shield, capitalize: true },
+  ];
 
-      <div className="px-5 py-5 space-y-4">
+  return (
+    <div className="min-h-screen bg-gray-50 text-slate-950">
+      <section className="bg-blue-600 px-5 pb-20 pt-12 text-white">
+        <div className="mx-auto max-w-3xl">
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-blue-100">Compte</p>
+          <div className="mt-4 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-semibold leading-tight">Profil</h1>
+              <p className="mt-1 text-sm text-blue-100">Gérez vos informations personnelles.</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/20 transition hover:bg-white/25 active:scale-95"
+              aria-label="Se déconnecter"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <main className="mx-auto -mt-14 max-w-3xl px-5 pb-6">
+        <section className="rounded-2xl border border-blue-100 bg-white p-5 text-center shadow-xl shadow-blue-100/70">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-600 text-3xl font-semibold text-white shadow-lg shadow-blue-200">
+            {displayInitial}
+          </div>
+          <h2 className="mt-4 truncate text-lg font-semibold text-slate-950">{displayName}</h2>
+          <p className="mt-1 truncate text-sm text-slate-500">{displayEmail || "—"}</p>
+          <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Compte actif
+          </div>
+        </section>
+
+        <div className="mt-5 space-y-4">
         {isLoading && (
-          <div className="bg-white rounded-2xl p-4 border border-gray-100 text-sm text-gray-500">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 text-sm text-gray-500">
             Chargement du profil...
           </div>
         )}
 
         {isError && (
-          <div className="bg-red-50 rounded-2xl p-4 border border-red-100 text-sm text-red-600">
-            {error?.message || "Impossible de charger les informations utilisateur."}
+          <div className="flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-600">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{error?.message || "Impossible de charger les informations utilisateur."}</p>
           </div>
         )}
 
-        <div className="bg-white rounded-2xl p-4 border border-gray-100 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
-              <User className="w-4 h-4 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-gray-400">Nom complet</p>
-              <p className="text-sm font-medium text-gray-800">{displayName || "—"}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
-              <Mail className="w-4 h-4 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-gray-400">Email</p>
-              <p className="text-sm font-medium text-gray-800">{displayEmail || "—"}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
-              <Shield className="w-4 h-4 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-gray-400">Rôle</p>
-              <p className="text-sm font-medium text-gray-800 capitalize">{displayRole || "user"}</p>
-            </div>
-          </div>
-        </div>
+          <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+            {profileItems.map((item, index) => (
+              <div
+                key={item.label}
+                className={`flex items-center gap-3 p-4 ${index > 0 ? "border-t border-gray-100" : ""}`}
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <item.icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-gray-400">{item.label}</p>
+                  <p className={`truncate text-sm font-semibold text-gray-900 ${item.capitalize ? "capitalize" : ""}`}>
+                    {item.value}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </section>
 
-        <div className="bg-white rounded-2xl p-4 border border-gray-100">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
-              <Phone className="w-4 h-4 text-blue-600" />
+          <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <Phone className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Téléphone</p>
+                <p className="text-xs text-gray-500">Utilisé pour vous contacter rapidement.</p>
+              </div>
             </div>
-            <p className="text-sm font-medium text-gray-800">Téléphone</p>
-          </div>
-          <Input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+243 000 000 000"
-            className="rounded-xl mb-3"
-          />
-          <Button
-            onClick={handleSave}
-            disabled={updateMutation.isPending}
-            className="w-full rounded-xl bg-blue-600 hover:bg-blue-700"
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+243 000 000 000"
+              className="mb-3 h-11 rounded-xl border-gray-200 bg-gray-50"
+            />
+            <Button
+              onClick={handleSave}
+              disabled={updateMutation.isPending}
+              className="h-11 w-full rounded-xl bg-blue-600 font-semibold hover:bg-blue-700"
+            >
+              {updateMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </section>
+
+          <button
+            onClick={handleLogout}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-100 bg-white text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50"
           >
-            {updateMutation.isPending ? "Enregistrement..." : "Enregistrer"}
-          </Button>
+            <LogOut className="h-4 w-4" />
+            Se déconnecter
+          </button>
         </div>
-
-        <button
-          onClick={handleLogout}
-          className="w-full bg-white rounded-2xl p-4 border border-gray-100 flex items-center gap-3 text-red-500 font-medium text-sm"
-        >
-          <LogOut className="w-4.5 h-4.5" />
-          Se déconnecter
-        </button>
-      </div>
+      </main>
     </div>
   );
 }
