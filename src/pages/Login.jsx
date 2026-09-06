@@ -4,7 +4,7 @@ import { api } from "@/api/backendClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
+import { AlertTriangle, LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "sonner";
@@ -15,64 +15,75 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [sessionConflict, setSessionConflict] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const completeLogin = (result) => {
+    console.log("Login response:", result);
+
+    if (result?.access_token || result?.token) {
+      api.auth.setToken(result.access_token || result.token);
+      toast.success("Connexion réussie !");
+      setTimeout(() => {
+        window.location.href = searchParams.get("redirect") || "/";
+      }, 1000);
+      return;
+    }
+
+    if (result?.requires_otp || result?.otp_required ||
+         result?.status === "otp_required" ||
+         result?.message?.toLowerCase()?.includes("otp") ||
+         result?.message?.toLowerCase()?.includes("code") ||
+         result?.message?.toLowerCase()?.includes("vérification")) {
+      const redirectParam = searchParams.get("redirect") ? `&redirect=${encodeURIComponent(searchParams.get("redirect"))}` : "";
+      toast.info("Code OTP envoyé à votre email");
+      navigate(`/verify-otp?email=${encodeURIComponent(email)}${redirectParam}`);
+      return;
+    }
+
+    if (result?.status === "success" || result?.success) {
+      toast.info(result.message || "Veuillez vérifier votre email pour continuer");
+      const redirectParam = searchParams.get("redirect") ? `&redirect=${encodeURIComponent(searchParams.get("redirect"))}` : "";
+      navigate(`/verify-otp?email=${encodeURIComponent(email)}${redirectParam}`);
+      return;
+    }
+
+    toast.success("Connexion réussie !");
+    setTimeout(() => {
+      window.location.href = searchParams.get("redirect") || "/";
+    }, 1000);
+  };
+
+  const submitLogin = async ({ forceLogin = false } = {}) => {
     setError("");
+    setSessionConflict(false);
     setLoading(true);
     try {
-      const result = await api.auth.login(email, password);
-      
-      // Après un login réussi, l'API pourrait :
-      // 1. Retourner directement un token (authentification sans OTP)
-      // 2. Retourner un message indiquant qu'un OTP a été envoyé
-      // 3. Retourner un statut "success" avec d'autres données
-      
-      console.log("Login response:", result);
-      
-      // Vérifier si un token est présent
-      if (result?.access_token || result?.token) {
-        // Authentification directe réussie
-        api.auth.setToken(result.access_token || result.token);
-        toast.success("Connexion réussie !");
-        setTimeout(() => {
-          window.location.href = searchParams.get("redirect") || "/";
-        }, 1000);
-      } 
-      // Vérifier si un OTP est requis (basé sur différents patterns possibles)
-      else if (result?.requires_otp || result?.otp_required || 
-               result?.status === "otp_required" || 
-               result?.message?.toLowerCase()?.includes('otp') ||
-               result?.message?.toLowerCase()?.includes('code') ||
-               result?.message?.toLowerCase()?.includes('vérification')) {
-        
-        // Rediriger vers la page de vérification OTP
-        const redirectParam = searchParams.get("redirect") ? `&redirect=${encodeURIComponent(searchParams.get("redirect"))}` : '';
-        toast.info("Code OTP envoyé à votre email");
-        navigate(`/verify-otp?email=${encodeURIComponent(email)}${redirectParam}`);
-      }
-      // Autres cas de succès (peut-être juste un message de confirmation)
-      else if (result?.status === "success" || result?.success) {
-        // L'API indique que le login a réussi mais peut-être qu'un OTP sera envoyé séparément
-        // Ou peut-être que l'utilisateur doit vérifier son email
-        toast.info(result.message || "Veuillez vérifier votre email pour continuer");
-        const redirectParam = searchParams.get("redirect") ? `&redirect=${encodeURIComponent(searchParams.get("redirect"))}` : '';
-        navigate(`/verify-otp?email=${encodeURIComponent(email)}${redirectParam}`);
-      }
-      else {
-        // Cas par défaut : supposer que le login a réussi sans OTP
-        toast.success("Connexion réussie !");
-        setTimeout(() => {
-          window.location.href = searchParams.get("redirect") || "/";
-        }, 1000);
-      }
+      const result = await api.auth.login(email, password, { forceLogin });
+      completeLogin(result);
     } catch (err) {
+      if (err.status === 409) {
+        const message = err.message || "Une session est déjà active sur un autre appareil.";
+        setSessionConflict(true);
+        setError(message);
+        toast.error(message);
+        return;
+      }
+
       setError(err.message || "Email ou mot de passe incorrect");
       toast.error(err.message || "Échec de la connexion");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    submitLogin();
+  };
+
+  const handleForceLogin = () => {
+    submitLogin({ forceLogin: true });
   };
 
   const handleGoogle = () => {
@@ -113,8 +124,29 @@ export default function Login() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          {error}
+        <div className="mb-4 space-y-3 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="flex gap-2">
+            {sessionConflict && <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />}
+            <p>{error}</p>
+          </div>
+          {sessionConflict && (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={handleForceLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Connexion...
+                </>
+              ) : (
+                "Se connecter sur cet appareil"
+              )}
+            </Button>
+          )}
         </div>
       )}
 

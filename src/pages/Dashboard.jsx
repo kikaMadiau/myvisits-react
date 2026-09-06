@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarCheck, Clock, CheckCircle2, XCircle, Plus, ChevronRight, TrendingUp } from "lucide-react";
+import { AlertCircle, CalendarCheck, Clock, CheckCircle2, XCircle, Plus, ChevronRight, TrendingUp } from "lucide-react";
 import VisitCard from "@/components/visits/VisitCard";
 import { api } from "@/api/backendClient";
 import { queryKeys } from "@/lib/queries";
@@ -47,6 +47,11 @@ const sortByVisitDate = (a, b) => {
   if (!dateA) return 1;
   if (!dateB) return -1;
   return dateA.getTime() - dateB.getTime();
+};
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  return hour >= 18 || hour < 5 ? "Bonsoir" : "Bonjour";
 };
 
 export default function Dashboard() {
@@ -98,105 +103,130 @@ export default function Dashboard() {
   const weekScheduled = getNumber(weekStats, ["scheduled", "total", "planned", "this_week", "thisWeek", "scheduled_visits", "scheduledVisits"]);
   const weekCompleted = getNumber(weekStats, ["completed", "completed_visits", "completedVisits"]);
   const weekPending = getNumber(weekStats, ["pending", "planned", "planned_visits", "plannedVisits"]);
+  const completionRate = weekScheduled > 0 ? Math.round((weekCompleted / weekScheduled) * 100) : 0;
 
   const stats = [
-    { label: "Total", value: total, icon: CalendarCheck, color: "bg-blue-50 text-blue-600" },
-    { label: "Today", value: today, icon: Clock, color: "bg-amber-50 text-amber-600" },
-    { label: "Completed", value: completed, icon: CheckCircle2, color: "bg-emerald-50 text-emerald-600" },
-    { label: "Cancelled", value: cancelled, icon: XCircle, color: "bg-red-50 text-red-600" },
+    { label: "Total", value: total, icon: CalendarCheck, tone: "bg-sky-50 text-sky-700 ring-sky-100" },
+    { label: "Today", value: today, icon: Clock, tone: "bg-amber-50 text-amber-700 ring-amber-100" },
+    { label: "Completed", value: completed, icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-700 ring-emerald-100" },
+    { label: "Cancelled", value: cancelled, icon: XCircle, tone: "bg-rose-50 text-rose-700 ring-rose-100" },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-blue-600 pt-12 pb-8 px-5 rounded-b-3xl">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-blue-200 text-sm">Welcome back,</p>
-            <h1 className="text-white text-xl font-bold">{userName}</h1>
-          </div>
-          <Link
-            to="/myvisits?add=true"
-            className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"
-          >
-            <Plus className="w-5 h-5 text-white" />
-          </Link>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {stats.map((s) => (
-            <div key={s.label} className="bg-white/15 backdrop-blur rounded-2xl p-3.5">
-              <div className="flex items-center gap-2 mb-1">
-                <s.icon className="w-4 h-4 text-blue-100" />
-                <span className="text-blue-100 text-xs font-medium">{s.label}</span>
-              </div>
-              <p className="text-white text-2xl font-bold">{s.value}</p>
+    <div className="min-h-screen bg-gray-50 text-zinc-950">
+      <section className="bg-blue-600 px-5 pb-9 pt-12 text-white">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-7 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-[0.22em] text-blue-100">MyVisit Control</p>
+              <h1 className="mt-2 text-2xl font-semibold leading-tight sm:text-3xl">
+                {getGreeting()}, {userName}
+              </h1>
+               {/*<p className="mt-2 max-w-xl text-sm leading-6 text-blue-100">
+                Gardez une vue claire sur les visites actives, les priorités du jour et la progression de la semaine.
+              </p>*/}
             </div>
-          ))}
+            <Link
+              to="/myvisits?add=true"
+              aria-label="Ajouter une visite"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-blue-700 shadow-lg shadow-blue-900/20 transition hover:bg-blue-50 active:scale-95"
+            >
+              <Plus className="h-5 w-5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            {stats.map((s) => (
+              <div key={s.label} className="rounded-lg border border-white/15 bg-white/15 px-2.5 py-2 shadow-sm backdrop-blur">
+                <div className="mb-1 flex items-center justify-between gap-1.5">
+                  <span className="text-[10px] font-medium text-blue-100">{s.label}</span>
+                  <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full ring-1 ${s.tone}`}>
+                    <s.icon className="h-3 w-3" />
+                  </span>
+                </div>
+                <p className="text-xl font-semibold leading-none tracking-normal text-white">{s.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {isLoading && (
+            <p className="mt-4 text-xs text-blue-100">Chargement du tableau de bord...</p>
+          )}
+
+          {isError && (
+            <div className="mt-4 flex items-start gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-100">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>{error?.message || "Impossible de charger le tableau de bord."}</p>
+            </div>
+          )}
         </div>
+      </section>
 
-        {isLoading && (
-          <p className="text-blue-100 text-xs mt-4">Chargement du tableau de bord...</p>
-        )}
+      <main className="mx-auto max-w-5xl px-5 py-6">
+        <section className="-mt-12 mb-6 rounded-2xl border border-blue-100 bg-white p-4 shadow-xl shadow-blue-100/70">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+                <TrendingUp className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-zinc-950">Cette semaine</p>
+                <p className="text-xs text-zinc-500">Suivi de l'exécution</p>
+              </div>
+            </div>
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+              {completionRate}% terminé
+            </span>
+          </div>
 
-        {isError && (
-          <p className="text-red-100 text-xs mt-4">
-            {error?.message || "Impossible de charger le tableau de bord."}
-          </p>
-        )}
-      </div>
+          <div className="grid grid-cols-3 divide-x divide-zinc-100 rounded-xl border border-zinc-100 bg-zinc-50">
+            <div className="px-3 py-4 text-center">
+              <p className="text-2xl font-semibold text-zinc-950">{weekScheduled}</p>
+              <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">Planifiées</p>
+            </div>
+            <div className="px-3 py-4 text-center">
+              <p className="text-2xl font-semibold text-emerald-700">{weekCompleted}</p>
+              <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">Terminées</p>
+            </div>
+            <div className="px-3 py-4 text-center">
+              <p className="text-2xl font-semibold text-amber-700">{weekPending || planned}</p>
+              <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">En attente</p>
+            </div>
+          </div>
+        </section>
 
-      {/* Upcoming */}
-      <div className="px-5 mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-bold text-gray-900">Upcoming Visits</h2>
-          <Link to="/myvisits" className="text-blue-600 text-xs font-medium flex items-center gap-0.5">
-            See all <ChevronRight className="w-3.5 h-3.5" />
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Agenda</p>
+            <h2 className="mt-1 text-lg font-semibold text-zinc-950">Prochaines visites</h2>
+          </div>
+          <Link to="/myvisits" className="flex items-center gap-1 text-sm font-medium text-blue-700 transition hover:text-blue-900">
+            Tout voir <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
+
         {upcoming.length === 0 ? (
-          <div className="bg-white rounded-2xl p-6 text-center border border-gray-100">
-            <CalendarCheck className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-400 text-sm">No upcoming visits</p>
-            <Link to="/myvisits?add=true" className="text-blue-600 text-sm font-medium mt-2 inline-block">
-              Schedule one →
+          <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-7 text-center shadow-sm">
+            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-500">
+              <CalendarCheck className="h-6 w-6" />
+            </span>
+            <p className="text-sm font-semibold text-zinc-900">Aucune visite à venir</p>
+            <p className="mx-auto mt-1 max-w-xs text-sm leading-6 text-zinc-500">
+              Ajoutez une visite pour préparer l'accueil et suivre son statut depuis ce tableau de bord.
+            </p>
+            <Link to="/myvisits?add=true" className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-blue-600 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">
+              <Plus className="mr-2 h-4 w-4" />
+              Planifier une visite
             </Link>
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {upcoming.map((v, index) => (
               <VisitCard key={getVisitorId(v) || v.id || index} visit={v} />
             ))}
           </div>
         )}
-      </div>
-
-      {/* Quick Stats 
-      <div className="px-5 mt-6 mb-4">
-        <div className="bg-white rounded-2xl p-4 border border-gray-100">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-semibold text-gray-900">This Week</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{weekScheduled}</p>
-              <p className="text-[11px] text-gray-400">Scheduled</p>
-            </div>
-            <div className="w-px h-8 bg-gray-100" />
-            <div className="text-center">
-              <p className="text-2xl font-bold text-emerald-600">{weekCompleted}</p>
-              <p className="text-[11px] text-gray-400">Completed</p>
-            </div>
-            <div className="w-px h-8 bg-gray-100" />
-            <div className="text-center">
-              <p className="text-2xl font-bold text-amber-600">{weekPending || planned}</p>
-              <p className="text-[11px] text-gray-400">Pending</p>
-            </div>
-          </div>
-        </div>
-      </div>*/}
+      </main>
     </div>
   );
 }

@@ -171,7 +171,7 @@ export const api = {
     setToken,
     getDeviceId,
 
-    login: (emailOrPayload, passwordArg) => {
+    login: (emailOrPayload, passwordArg, options = {}) => {
       const { email, password } = normalizeEmailPassword(emailOrPayload, passwordArg);
 
       return request("/v1/login", {
@@ -179,6 +179,7 @@ export const api = {
         body: withDevice({
           u_name: email,
           u_password: password,
+          ...(options.forceLogin ? { force_login: true } : {}),
         }),
       }).then(saveToken);
     },

@@ -63,6 +63,16 @@ export default function MyVisits() {
     return true; 
   }); 
 
+  const statusCounts = visits.reduce(
+    (counts, visit) => {
+      const status = visit.status || visit.vis_status;
+      counts.all += 1;
+      if (status && counts[status] !== undefined) counts[status] += 1;
+      return counts;
+    },
+    { all: 0, planned: 0, in_progress: 0, completed: 0, cancelled: 0 },
+  );
+
   return ( 
     <div className="min-h-screen bg-gray-50"> 
       {/* Header */} 
@@ -77,7 +87,7 @@ export default function MyVisits() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" /> 
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search visits..." className="w-full pl-10 pr-4 py-2.5 bg-gray-50 rounded-xl text-sm border border-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300" /> 
         </div> 
-        <StatusFilter value={filter} onChange={setFilter} /> 
+        <StatusFilter value={filter} onChange={setFilter} counts={statusCounts} /> 
       </div> 
 
       {/* List Content */} 

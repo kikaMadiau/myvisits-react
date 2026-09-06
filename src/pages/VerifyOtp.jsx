@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "@/api/backendClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { Mail, KeyRound, Loader2, ArrowLeft } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
@@ -146,24 +147,27 @@ export default function VerifyOtp() {
         
         <div className="space-y-2">
           <Label htmlFor="otp">Code OTP</Label>
-          <div className="relative">
-            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
+          <div className="flex justify-center">
+            <InputOTP
               id="otp"
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength="6"
-              placeholder="123456"
+              maxLength={6}
               value={otp}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, '');
-                if (value.length <= 6) setOtp(value);
-              }}
-              className="pl-10 h-12 text-center text-2xl tracking-widest"
+              onChange={(value) => setOtp(value.replace(/\D/g, ""))}
+              pattern="[0-9]*"
+              inputMode="numeric"
               autoFocus
-              required
-            />
+              autoComplete="one-time-code"
+              containerClassName="gap-2"
+            >
+              <InputOTPGroup className="gap-2">
+                <InputOTPSlot index={0} className="h-12 w-10 rounded-lg border border-input text-lg font-semibold shadow-sm sm:w-12" />
+                <InputOTPSlot index={1} className="h-12 w-10 rounded-lg border border-input text-lg font-semibold shadow-sm sm:w-12" />
+                <InputOTPSlot index={2} className="h-12 w-10 rounded-lg border border-input text-lg font-semibold shadow-sm sm:w-12" />
+                <InputOTPSlot index={3} className="h-12 w-10 rounded-lg border border-input text-lg font-semibold shadow-sm sm:w-12" />
+                <InputOTPSlot index={4} className="h-12 w-10 rounded-lg border border-input text-lg font-semibold shadow-sm sm:w-12" />
+                <InputOTPSlot index={5} className="h-12 w-10 rounded-lg border border-input text-lg font-semibold shadow-sm sm:w-12" />
+              </InputOTPGroup>
+            </InputOTP>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             Entrez les 6 chiffres reçus par email
